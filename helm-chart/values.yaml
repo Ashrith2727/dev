@@ -1,0 +1,10 @@
+replicaCount: 2
+image:
+  repository: docker.io/yourdockerhubuser/dev
+  tag: latest
+service:
+  type: ClusterIP
+  port: 5000
+resources: {}
+ingress:
+  enabled: false
