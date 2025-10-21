@@ -1,4 +1,4 @@
-# CI/CD Demo
+# Dev My First Devops Project
 
 1. Clone repository.
 2. Start k3d cluster: `k3d cluster create cicd --agents 2`
