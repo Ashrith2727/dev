@@ -1,7 +1,6 @@
 # Testing
 pytest==7.4.0
 pytest-cov==4.1.0
-werkzeug<3.1.0
 
 # Linting / Code quality (optional)
 flake8==6.1.0
@@ -9,7 +8,7 @@ black==24.3.0
 
 # Common dependencies for apps (add as needed)
 requests==2.31.0
-flask==2.3.2
+flask==2.3.4
 
 # Optional: Kubernetes / Helm interaction (if used in scripts)
 kubernetes==26.1.0
