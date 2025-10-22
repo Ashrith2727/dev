@@ -1,0 +1,70 @@
+pipeline {
+  agent any
+  environment {
+    DOCKER_REGISTRY = 'docker.io'
+    IMAGE = "${DOCKER_REGISTRY}/${env.DOCKERHUB_USER}/dev"
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+    stage('Unit tests') {
+      steps {
+        dir('app') {
+          sh 'python -m pytest tests/ -q'
+        }
+      }
+    }
+    stage('Lint') {
+      steps {
+        echo "Skipping lint (add flake8/pylint if desired)"
+      }
+    }
+    stage('Build Image') {
+      steps {
+        dir('app') {
+          sh "docker build -t ${IMAGE}:${env.BUILD_NUMBER} ."
+        }
+      }
+    }
+    stage('Push Image') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            docker push ${IMAGE}:${BUILD_NUMBER}
+            docker tag ${IMAGE}:${BUILD_NUMBER} ${IMAGE}:latest
+            docker push ${IMAGE}:latest
+          '''
+        }
+      }
+    }
+    stage('Deploy to K8s via Helm') {
+      steps {
+        withCredentials([string(credentialsId: 'kubeconfig', variable: 'KUBECONF')]) {
+          sh '''
+            mkdir -p $HOME/.kube
+            echo "$KUBECONF" > $HOME/.kube/config
+            helm upgrade --install dev ./helm-chart \
+              --set image.repository=${IMAGE} \
+              --set image.tag=${BUILD_NUMBER}
+          '''
+        }
+      }
+    }
+    stage('Post-deploy tests') {
+      steps {
+        sh 'sleep 5'
+        sh 'kubectl get pods -l app=dev -o wide'
+        sh 'kubectl rollout status deployment/dev'
+      }
+    }
+  }
+  post {
+    failure {
+      mail to: 'dev-team@example.com', subject: "Build failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}", body: "See Jenkins"
+    }
+  }
+}

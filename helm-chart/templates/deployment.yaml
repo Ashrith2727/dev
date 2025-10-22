@@ -30,3 +30,4 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 10
         resources: {{ toYaml .Values.resources | indent 8 }}
+
